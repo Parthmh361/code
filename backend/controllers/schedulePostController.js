@@ -114,7 +114,7 @@ exports.instantPost = async (req, res) => {
       message,
       mediaType,
     } = req.body;
-    console.log(req.file);
+    console.log("REQUEST BODY:",req.body);
        if (!user_id) {
       return res.status(400).json({ error: 'Missing user_id' });
     }
