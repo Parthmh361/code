@@ -1,9 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const session = require('express-session');
 const cors = require('cors');
-const MongoStore = require('connect-mongo');
 
 const app = express();
 
@@ -26,30 +24,9 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Preflight requests
-// app.options('*', cors());
-
 // Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Sessions
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'secure-facebook-login',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({ 
-    mongoUrl: process.env.MONGO_URI,
-    touchAfter: 24 * 3600, // lazy session update
-    ttl: 14 * 24 * 60 * 60 // = 14 days. Default
-  }),
-  cookie: {
-    secure: process.env.NODE_ENV === 'production', // Only secure in production
-    httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
 
 // MongoDB Connection
 console.log('Trying to connect to MongoDB:', process.env.MONGO_URI);

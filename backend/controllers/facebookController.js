@@ -14,6 +14,19 @@ async function getFacebookCredentials(user_id) {
   };
 }
 
+// Helper to get Facebook access token from DB
+async function getFacebookAccessToken(user_id) {
+  const user = await User.findById(user_id);
+  if (!user || !user.facebookAccessToken) {
+    throw new Error('Facebook access token not found for user');
+  }
+  if (user.facebookTokenExpiry && new Date() > user.facebookTokenExpiry) {
+    throw new Error('Facebook token expired. Please authenticate again.');
+  }
+  return user.facebookAccessToken;
+}
+
+// Facebook Login
 exports.facebookLogin = async (req, res) => {
   const { user_id } = req.query;
   try {
@@ -26,6 +39,7 @@ exports.facebookLogin = async (req, res) => {
   }
 };
 
+// Facebook Callback
 exports.facebookCallback = async (req, res) => {
   const { code, state } = req.query;
   const user_id = state;
@@ -46,40 +60,23 @@ exports.facebookCallback = async (req, res) => {
       facebookTokenExpiry: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days
       lastFacebookLogin: new Date()
     }, { new: true });
-    req.session.userAccessToken = userAccessToken;
-    req.session.user_id = user_id;
-    await new Promise((resolve, reject) => {
-      req.session.save((err) => (err ? reject(err) : resolve()));
-    });
     res.redirect(`https://hbg-vercel-yhjj.vercel.app/home?auth=success&user_id=${user_id}`);
   } catch (error) {
     res.status(500).json({ error: 'Token exchange failed' });
   }
 };
 
+// Get Facebook Pages
 exports.getFacebookPages = async (req, res) => {
   const { user_id } = req.query;
-  const sessionToken = req.session.userAccessToken;
-  let token = sessionToken;
-  let userId = req.session.user_id || user_id;
-  if (!token && user_id) {
-    try {
-      const user = await User.findById(user_id);
-      if (user && user.facebookAccessToken) {
-        if (!user.facebookTokenExpiry || new Date() < user.facebookTokenExpiry) {
-          token = user.facebookAccessToken;
-          userId = user_id;
-        } else {
-          return res.status(401).json({ error: 'Facebook token expired. Please authenticate again.' });
-        }
-      }
-    } catch (dbError) {}
+  if (!user_id) {
+    return res.status(400).json({ error: 'Missing user_id' });
   }
-  if (!token) {
-    return res.status(401).json({ 
-      error: 'User not authenticated. Please provide user_id parameter or authenticate again.',
-      suggestion: 'Call /auth/facebook?user_id=YOUR_USER_ID to authenticate'
-    });
+  let token;
+  try {
+    token = await getFacebookAccessToken(user_id);
+  } catch (err) {
+    return res.status(401).json({ error: err.message });
   }
   try {
     const pageRes = await axios.get(`https://graph.facebook.com/me/accounts?access_token=${token}`);
@@ -94,7 +91,7 @@ exports.getFacebookPages = async (req, res) => {
           category_list: page.category_list,
           access_token: page.access_token,
           tasks: page.tasks,
-          userId: userId
+          userId: user_id
         },
         { upsert: true, new: true }
       );
@@ -103,80 +100,48 @@ exports.getFacebookPages = async (req, res) => {
     res.json({ pages: sanitizedPages });
   } catch (err) {
     if (err.response?.data?.error?.code === 190) {
-      if (userId) {
-        await User.findByIdAndUpdate(userId, {
-          $unset: { facebookAccessToken: 1, facebookTokenExpiry: 1 }
-        });
-      }
-      req.session.userAccessToken = null;
+      await User.findByIdAndUpdate(user_id, {
+        $unset: { facebookAccessToken: 1, facebookTokenExpiry: 1 }
+      });
       return res.status(401).json({ error: 'Invalid Facebook token. Please authenticate again.' });
     }
     res.status(500).json({ error: 'Failed to fetch pages' });
   }
 };
 
+// Facebook Status
 exports.facebookStatus = async (req, res) => {
   const { user_id } = req.query;
-  const sessionToken = req.session.userAccessToken;
-  const sessionUserId = req.session.user_id;
+  if (!user_id) return res.status(400).json({ error: 'Missing user_id' });
   let isAuthenticated = false;
-  let tokenSource = null;
   let tokenExpiry = null;
   let lastLogin = null;
-  if (sessionToken && sessionUserId) {
-    isAuthenticated = true;
-    tokenSource = 'session';
-  }
-  if (user_id) {
-    try {
-      const user = await User.findById(user_id).select('facebookAccessToken facebookTokenExpiry lastFacebookLogin');
-      if (user?.facebookAccessToken && (!user.facebookTokenExpiry || new Date() < user.facebookTokenExpiry)) {
-        isAuthenticated = true;
-        tokenSource = tokenSource === 'session' ? 'both' : 'database';
-        tokenExpiry = user.facebookTokenExpiry;
-        lastLogin = user.lastFacebookLogin;
-      }
-    } catch (err) {}
-  }
+  try {
+    const user = await User.findById(user_id).select('facebookAccessToken facebookTokenExpiry lastFacebookLogin');
+    if (user?.facebookAccessToken && (!user.facebookTokenExpiry || new Date() < user.facebookTokenExpiry)) {
+      isAuthenticated = true;
+      tokenExpiry = user.facebookTokenExpiry;
+      lastLogin = user.lastFacebookLogin;
+    }
+  } catch (err) {}
   res.json({
     authenticated: isAuthenticated,
-    tokenSource,
-    lastLogin,
     tokenExpiry,
-    sessionId: req.sessionID,
-    userId: sessionUserId || user_id
+    lastLogin,
+    userId: user_id
   });
 };
 
+// Facebook Logout
 exports.facebookLogout = async (req, res) => {
   const { user_id } = req.query;
-  const sessionUserId = req.session.user_id;
+  if (!user_id) return res.status(400).json({ error: 'Missing user_id' });
   try {
-    if (user_id || sessionUserId) {
-      const targetUserId = user_id || sessionUserId;
-      await User.findByIdAndUpdate(targetUserId, {
-        $unset: { facebookAccessToken: 1, facebookTokenExpiry: 1 }
-      });
-    }
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ error: 'Session logout failed' });
-      }
-      res.clearCookie('connect.sid');
-      res.status(200).json({ message: 'Logged out successfully from both session and database' });
+    await User.findByIdAndUpdate(user_id, {
+      $unset: { facebookAccessToken: 1, facebookTokenExpiry: 1 }
     });
+    res.status(200).json({ message: 'Logged out successfully from database' });
   } catch (err) {
     res.status(500).json({ error: 'Logout failed' });
   }
-};
-
-exports.debugSession = (req, res) => {
-  res.json({
-    sessionID: req.sessionID,
-    session: req.session,
-    cookies: req.headers.cookie,
-    userAgent: req.headers['user-agent'],
-    origin: req.headers.origin,
-    referer: req.headers.referer
-  });
 };
