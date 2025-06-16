@@ -69,6 +69,7 @@ exports.facebookCallback = async (req, res) => {
 // Get Facebook Pages
 exports.getFacebookPages = async (req, res) => {
   const { user_id } = req.query;
+  console.log(user_id);
   if (!user_id) {
     return res.status(400).json({ error: 'Missing user_id' });
   }
@@ -81,6 +82,8 @@ exports.getFacebookPages = async (req, res) => {
   try {
     const pageRes = await axios.get(`https://graph.facebook.com/me/accounts?access_token=${token}`);
     const pages = pageRes.data.data;
+    console.log(pages);
+    console.log(token);
     for (const page of pages) {
       await Page.findOneAndUpdate(
         { pageId: page.id },
