@@ -44,13 +44,16 @@ async function uploadVideo({ pageId, pageAccessToken, description, buffer, filen
 exports.schedulePost = async (req, res) => {
   try {
     const {
+      user_id,
       pageId,
       caption,
       message,
       scheduledTime,
       mediaType,
     } = req.body;
-
+       if (!user_id) {
+      return res.status(400).json({ error: 'Missing user_id' });
+    }
     if (!pageId || !req.file) {
       return res.status(400).json({ error: 'Missing required fields or file' });
     }
@@ -105,12 +108,16 @@ exports.schedulePost = async (req, res) => {
 exports.instantPost = async (req, res) => {
   try {
     const {
+      user_id,
       pageId,
       caption,
       message,
       mediaType,
     } = req.body;
     console.log(req.file);
+       if (!user_id) {
+      return res.status(400).json({ error: 'Missing user_id' });
+    }
     if (!pageId || !req.file) {
       return res.status(400).json({ error: 'Missing required fields or file' });
     }
