@@ -110,7 +110,7 @@ exports.instantPost = async (req, res) => {
       message,
       mediaType,
     } = req.body;
-
+    console.log(req.file);
     if (!pageId || !req.file) {
       return res.status(400).json({ error: 'Missing required fields or file' });
     }
