@@ -8,30 +8,17 @@ const schedulePostController = require('../controllers/schedulePostController');
 
 // Order matters: multer goes first, then auth middleware
 router.post('/timing', 
-            (req, res, next) => {
-  console.log('--- Incoming Request ---');
-  console.log('Headers:', req.headers);
-  
-  let rawData = '';
-  req.on('data', chunk => rawData += chunk);
-  req.on('end', () => {
-    console.log('Raw body:', rawData);
-    next(); // proceed to multer
-  });
-},
-            upload.single('file'), requireFacebookAuth, schedulePostController.schedulePost);
+            upload.single('file'), (req, res, next) => {
+    console.log('Parsed req.body:', req.body);
+    console.log('Parsed req.file:', req.file?.originalname);
+    next();
+  }, requireFacebookAuth, schedulePostController.schedulePost);
 router.post('/instantly',
-            (req, res, next) => {
-  console.log('--- Incoming Request ---');
-  console.log('Headers:', req.headers);
-  
-  let rawData = '';
-  req.on('data', chunk => rawData += chunk);
-  req.on('end', () => {
-    console.log('Raw body:', rawData);
-    next(); // proceed to multer
-  });
-},
+             (req, res, next) => {
+    console.log('Parsed req.body:', req.body);
+    console.log('Parsed req.file:', req.file?.originalname);
+    next();
+  },
             upload.single('file'), requireFacebookAuth, schedulePostController.instantPost);
 
 module.exports = router;
