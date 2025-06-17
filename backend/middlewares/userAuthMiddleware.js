@@ -19,7 +19,7 @@ async function requireFacebookAuth(req, res, next) {
     }
     return res.status(401).json({ error: 'User not authenticated with Facebook' });
   } catch (err) {
-    return res.status(500).json({ error: 'Authentication check failed' });
+    return res.status(500).json({ error: err });
   }
 }
 module.exports = requireFacebookAuth;
