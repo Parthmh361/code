@@ -4,6 +4,7 @@ const Page = require('../models/Page');
 
 // Helper to upload photo to Facebook
 async function uploadPhoto({ pageId, pageAccessToken, caption, buffer, filename, scheduledTime }) {
+  console.log("In upload photo");
   const formData = new FormData();
   formData.append('access_token', pageAccessToken);
   if (caption) formData.append('caption', caption);
@@ -115,6 +116,7 @@ exports.instantPost = async (req, res) => {
       mediaType,
     } = req.body;
     console.log("REQUEST BODY:",req.body);
+    
        if (!user_id) {
       return res.status(400).json({ error: 'Missing user_id' });
     }
