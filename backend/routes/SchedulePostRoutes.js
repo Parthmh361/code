@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const schedulePostController = require('../controllers/schedulePostController');
-
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.post('/timing', upload.single('file'), schedulePostController.schedulePost);
-router.post('/instantly', upload.single('file'), schedulePostController.instantPost);
+const requireFacebookAuth = require('../middlewares/userAuthMiddleware');
+const schedulePostController = require('../controllers/schedulePostController');
+
+// Order matters: multer goes first, then auth middleware
+router.post('/timing', upload.single('file'), requireFacebookAuth, schedulePostController.schedulePost);
+router.post('/instantly', upload.single('file'), requireFacebookAuth, schedulePostController.instantPost);
 
 module.exports = router;
