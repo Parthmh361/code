@@ -2,7 +2,9 @@ const User = require('../models/User');
 
 // Middleware to require Facebook authentication using user_id in query
 async function requireFacebookAuth(req, res, next) {
+  console.log("INside the middleware");
   const user_id = req.query.user_id;
+  console.log(user_id);
   if (!user_id) {
     return res.status(400).json({ error: 'Missing user_id' });
   }
