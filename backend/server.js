@@ -41,9 +41,9 @@ mongoose.connect(process.env.MONGO_URI, {
 // Routes
 app.use('/userauth', require('./routes/Auth'));
 app.use('/auth', require('./routes/AuthRoutes'));
-app.use('/schedulePost', require('./middlewares/userAuthMiddleware'), require('./routes/SchedulePostRoutes'));
-app.use('/posts', require('./middlewares/userAuthMiddleware'), require('./routes/getPostRoutes'));
-app.use('/editPost', require('./middlewares/userAuthMiddleware'), require('./routes/EditPostsRoutes'));
+app.use('/schedulePost', require('./routes/SchedulePostRoutes'));
+app.use('/posts',  require('./routes/getPostRoutes'));
+app.use('/editPost', require('./routes/EditPostsRoutes'));
 app.use('/insights', require('./middlewares/userAuthMiddleware'), require('./routes/InsightsRoutes'));
 app.use('/api/youtube', require('./routes/youtube'));
 
