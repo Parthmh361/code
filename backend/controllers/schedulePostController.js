@@ -159,6 +159,8 @@ exports.instantPost = async (req, res) => {
     res.status(200).json({ success: true, postId: responseData.id || responseData.post_id || null });
   } catch (error) {
     console.error('Instant Post Error:', error.response?.data || error.message);
-    res.status(500).json({ error: error });
+    res.status(500).json({
+  error: error.response?.data?.error || error.response?.data || error.message || 'Unknown error',
+});
   }
 };
