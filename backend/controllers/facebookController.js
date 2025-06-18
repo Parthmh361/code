@@ -60,7 +60,7 @@ exports.facebookCallback = async (req, res) => {
       facebookTokenExpiry: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days
       lastFacebookLogin: new Date()
     }, { new: true });
-    res.redirect(`https://hbg-vercel-yhjj.vercel.app/home?auth=success&user_id=${user_id}`);
+    res.redirect(`https://socail-suit-frontend-buv2.vercel.app/home?auth=success&user_id=${user_id}`);
   } catch (error) {
     res.status(500).json({ error: 'Token exchange failed' });
   }
