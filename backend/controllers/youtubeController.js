@@ -33,7 +33,7 @@ exports.oauth2Callback = async (req, res) => {
   try {
     const { tokens } = await oauth2Client.getToken(code);
     req.session.accessToken = tokens.access_token;
-    res.redirect('https://hbg-vercel-yhjj.vercel.app/youtube');
+    res.redirect('https://socail-suit-frontend-buv2.vercel.app/youtube');
   } catch (err) {
     res.status(400).json({ error: 'Failed to get tokens', details: err });
   }
