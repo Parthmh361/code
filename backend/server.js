@@ -8,7 +8,8 @@ const app = express();
 // CORS
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://hbg-vercel-yhjj.vercel.app'
+  'https://hbg-vercel-yhjj.vercel.app',
+  'https://socail-suit-frontend-buv2.vercel.app'
 ];
 
 app.use(cors({
