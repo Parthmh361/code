@@ -14,11 +14,15 @@ router.post('/timing',
     next();
   }, requireFacebookAuth, schedulePostController.schedulePost);
 router.post('/instantly',
-             (req, res, next) => {
+  upload.single('file'), // ✅ multer must go first
+  (req, res, next) => {
     console.log('Parsed req.body:', req.body);
     console.log('Parsed req.file:', req.file?.originalname);
     next();
   },
-            upload.single('file'), requireFacebookAuth, schedulePostController.instantPost);
+  requireFacebookAuth,
+  schedulePostController.instantPost
+);
+
 
 module.exports = router;
