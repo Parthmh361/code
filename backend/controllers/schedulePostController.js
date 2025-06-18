@@ -107,6 +107,7 @@ exports.schedulePost = async (req, res) => {
 
 // Post photo or video immediately with uploaded file
 exports.instantPost = async (req, res) => {
+  console.log("IN THE INSTANT POST CONTROLLER");
   try {
     const {
       user_id,
