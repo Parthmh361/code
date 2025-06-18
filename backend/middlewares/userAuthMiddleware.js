@@ -1,3 +1,4 @@
+const User = require('../models/User');
 async function requireFacebookAuth(req, res, next) {
   console.log("Inside the middleware");
 
